@@ -84,51 +84,33 @@
 
         <section class="content-block" id="aala-pricing">
             <h2>AALA Conference registration fees</h2>
-            <p>Fee cards are <strong>clickable</strong>. Select a price line to add it directly to the cart below.</p>
-            <p class="footnote">Early bird bundle price includes registration and conference banquet. Macau local rates apply to Macau residents, students studying in Macau, and Macau blue-card holders.</p>
+            <p class="early-bird-notice"><strong>Early-bird registration has been extended to 31 July 2026.</strong></p>
+            <p>Choose your role first. The applicable registration rates will then appear below.</p>
+            <p class="footnote">The early-bird bundle includes registration and the conference banquet. Macau local rates apply to Macau residents, students studying in Macau, and Macau blue-card holders. All prices are in MOP.</p>
 
-            <p class="footnote">Click a price line to add it to the cart. All prices are in MOP.</p>
+            <div class="registration-chooser">
+                <h3>1 Choose your role</h3>
+                <div class="role-choice-grid" id="registrationRoleChoices">
+                    <label><input type="radio" name="registrationRole" value="presenter"> Presenter</label>
+                    <label><input type="radio" name="registrationRole" value="student"> Student presenter</label>
+                    <label><input type="radio" name="registrationRole" value="participant"> Participant (not presenting)</label>
+                    <label><input type="radio" name="registrationRole" value="addons-only"> Add-ons only</label>
+                </div>
+                <label class="macau-local-choice" id="macauLocalChoice" style="display: none;">
+                    <input type="checkbox" id="isMacauLocal">
+                    I qualify for the Macau local rate.
+                </label>
+
+                <div id="registrationRateSection" style="display: none;">
+                    <h3>2 Choose your registration rate</h3>
+                    <p class="footnote" id="registrationRateSummary"></p>
+                    <ul class="rate-option-list" id="registrationRateOptions"></ul>
+                </div>
+            </div>
+
             <div class="card-grid">
-                <div class="card">
-                    <h3>Presenter</h3>
-                    <p><strong>Non-Macau local</strong></p>
-                    <ul>
-                        <li>Early bird: 1480</li>
-                        <li>Regular: 1600</li>
-                        <li>Early bird bundle: 2000</li>
-                    </ul>
-                    <p><strong>Macau local</strong></p>
-                    <ul>
-                        <li>Early bird: 1080</li>
-                        <li>Regular: 1200</li>
-                        <li>Early bird bundle: 1600</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>Student presenter</h3>
-                    <p><strong>Non-Macau local</strong></p>
-                    <ul>
-                        <li>Early bird: 720</li>
-                        <li>Regular: 880</li>
-                        <li>Early bird bundle: 1240</li>
-                    </ul>
-                    <p><strong>Macau local</strong></p>
-                    <ul>
-                        <li>Early bird: 520</li>
-                        <li>Regular: 680</li>
-                        <li>Early bird bundle: 1040</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <h3>Participant (not presenting)</h3>
-                    <ul>
-                        <li>Early bird: 520</li>
-                        <li>Regular: 680</li>
-                        <li>Early bird bundle: 1040</li>
-                    </ul>
-                </div>
                 <div class="card addon-card">
-                    <h3>Optional add-ons</h3>
+                    <h3 id="optionalAddonsTitle">3 Optional add-ons</h3>
                     <ul>
                         <li class="price-option" data-item-type="workshop-parallel" data-amount="600" data-currency="MOP" data-label="Workshop 1 - Assessing English language students with Specific Learning Difficulties">Workshop 1 — Assessing English language students with Specific Learning Difficulties: 600</li>
                         <li class="price-option" data-item-type="workshop-parallel" data-amount="600" data-currency="MOP" data-label="Workshop 2 - Validity and validation in language assessment: Concepts, evidence, and argument-based approaches">Workshop 2 — Validity and validation in language assessment: Concepts, evidence, and argument-based approaches: 600</li>
@@ -231,6 +213,27 @@
     <script>
     (function () {
         var PAYMENT_ENDPOINT = "https://hmc-mu.vercel.app/create-payment";
+        var EARLY_BIRD_DEADLINE = "2026-07-31";
+        var EARLY_BIRD_DEADLINE_LABEL = "31 July 2026";
+        var REGISTRATION_FEES = {
+            presenter: {
+                nonLocal: { early: 1480, regular: 1600, bundle: 2000 },
+                local: { early: 1080, regular: 1200, bundle: 1600 }
+            },
+            student: {
+                nonLocal: { early: 720, regular: 880, bundle: 1240 },
+                local: { early: 520, regular: 680, bundle: 1040 }
+            },
+            participant: {
+                nonLocal: { early: 520, regular: 680, bundle: 1040 },
+                local: { early: 520, regular: 680, bundle: 1040 }
+            }
+        };
+        var REGISTRATION_ROLE_LABELS = {
+            presenter: "Presenter",
+            student: "Student presenter",
+            participant: "Participant (not presenting)"
+        };
 
         var cartEmpty = document.getElementById("cartEmpty");
         var cartListWrap = document.getElementById("cartListWrap");
@@ -249,6 +252,13 @@
         var emailProofNote = document.getElementById("emailProofNote");
         var payBtn = document.getElementById("payBtn");
         var configWarning = document.getElementById("configWarning");
+        var registrationRoleChoices = document.getElementById("registrationRoleChoices");
+        var macauLocalChoice = document.getElementById("macauLocalChoice");
+        var isMacauLocal = document.getElementById("isMacauLocal");
+        var registrationRateSection = document.getElementById("registrationRateSection");
+        var registrationRateSummary = document.getElementById("registrationRateSummary");
+        var registrationRateOptions = document.getElementById("registrationRateOptions");
+        var optionalAddonsTitle = document.getElementById("optionalAddonsTitle");
         var registrationEmailSent = false;
 
         function showWarning(msg) {
@@ -258,6 +268,110 @@
 
         function hideWarning() {
             configWarning.style.display = "none";
+        }
+
+        function getCurrentChinaDateString() {
+            return new Intl.DateTimeFormat("en-CA", {
+                timeZone: "Asia/Shanghai",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit"
+            }).format(new Date());
+        }
+
+        function isEarlyBirdAllowed() {
+            return getCurrentChinaDateString() <= EARLY_BIRD_DEADLINE;
+        }
+
+        function getSelectedRegistrationRole() {
+            var selected = registrationRoleChoices.querySelector('input[name="registrationRole"]:checked');
+            return selected ? selected.value : "";
+        }
+
+        function createRegistrationRateOption(role, localityLabel, rateKey, rateLabel, amount) {
+            var li = document.createElement("li");
+            var label = REGISTRATION_ROLE_LABELS[role] + " - " + localityLabel + " - " + rateLabel;
+            var isBundle = rateKey === "bundle";
+
+            li.className = "price-option";
+            li.setAttribute("role", "button");
+            li.setAttribute("tabindex", "0");
+            li.setAttribute("data-label", label);
+            li.setAttribute("data-currency", "MOP");
+            li.setAttribute("data-item-type", "registration");
+            li.setAttribute("data-amount", String(amount));
+            if (isBundle) {
+                li.setAttribute("data-is-bundle", "true");
+            }
+            li.textContent = rateLabel + ": MOP " + amount;
+
+            function selectRate() {
+                if ((rateKey === "early" || isBundle) && !isEarlyBirdAllowed()) {
+                    window.alert("Early-bird registration closed on " + EARLY_BIRD_DEADLINE_LABEL + " (China time). Please choose the regular rate.");
+                    renderRegistrationRates();
+                    return;
+                }
+                addSelectedItemToCart({
+                    title: label,
+                    amount: amount,
+                    currency: "MOP",
+                    itemType: "registration",
+                    isBundle: isBundle,
+                    allowFree: false
+                });
+            }
+
+            li.addEventListener("click", selectRate);
+            li.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    selectRate();
+                }
+            });
+            registrationRateOptions.appendChild(li);
+        }
+
+        function renderRegistrationRates() {
+            var role = getSelectedRegistrationRole();
+            var addonsOnly = role === "addons-only";
+            var hasRegistrationRole = Boolean(role && !addonsOnly);
+
+            macauLocalChoice.style.display = hasRegistrationRole ? "block" : "none";
+            registrationRateSection.style.display = hasRegistrationRole ? "block" : "none";
+            optionalAddonsTitle.textContent = addonsOnly ? "2 Optional add-ons" : (hasRegistrationRole ? "3 Optional add-ons" : "Optional add-ons");
+            registrationRateOptions.innerHTML = "";
+
+            if (!hasRegistrationRole) {
+                if (addonsOnly) {
+                    isMacauLocal.checked = false;
+                }
+                return;
+            }
+
+            var localityKey = isMacauLocal.checked ? "local" : "nonLocal";
+            var localityLabel = isMacauLocal.checked ? "Macau local" : "Non-Macau local";
+            var rates = REGISTRATION_FEES[role][localityKey];
+            var earlyAllowed = isEarlyBirdAllowed();
+
+            registrationRateSummary.textContent = REGISTRATION_ROLE_LABELS[role] + " — " + localityLabel + ". "
+                + (earlyAllowed
+                    ? "Early-bird rates are available through " + EARLY_BIRD_DEADLINE_LABEL + " (China time)."
+                    : "The early-bird period has ended; the regular rate applies.");
+
+            if (earlyAllowed) {
+                createRegistrationRateOption(role, localityLabel, "early", "Early bird", rates.early);
+                createRegistrationRateOption(role, localityLabel, "bundle", "Early bird bundle (registration + banquet)", rates.bundle);
+            } else {
+                createRegistrationRateOption(role, localityLabel, "regular", "Regular", rates.regular);
+            }
+            syncPriceSelectionFromCart();
+        }
+
+        function resetRegistrationForChoiceChange() {
+            CompanyCart.removeByType("registration");
+            resetEmailGate();
+            renderRegistrationRates();
+            renderCart();
         }
 
         function initCartCurrency() {
@@ -708,6 +822,13 @@
         }
 
         function validateCartForPayment(cart) {
+            if (!isEarlyBirdAllowed() && cart.some(function (item) {
+                return item.itemType === "registration" && /early bird/i.test(item.title);
+            })) {
+                window.alert("Early-bird registration closed on " + EARLY_BIRD_DEADLINE_LABEL + " (China time). Remove the early-bird ticket and choose the regular rate.");
+                return false;
+            }
+
             var hasSponsorship = cart.some(function (item) { return item.itemType === "sponsorship"; });
             var hasConferenceItem = cart.some(function (item) {
                 return CONFERENCE_TYPES.indexOf(item.itemType) >= 0;
@@ -802,8 +923,13 @@
         });
 
         emailBtn.addEventListener("click", openRegistrationEmail);
+        registrationRoleChoices.querySelectorAll('input[name="registrationRole"]').forEach(function (radio) {
+            radio.addEventListener("change", resetRegistrationForChoiceChange);
+        });
+        isMacauLocal.addEventListener("change", resetRegistrationForChoiceChange);
 
         initCartCurrency();
+        renderRegistrationRates();
         initPriceCardClicks();
         renderCart();
     })();

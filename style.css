@@ -282,6 +282,61 @@ a:hover {
     color: var(--navy);
 }
 
+.early-bird-notice {
+    padding: 0.75rem 1rem;
+    border-left: 4px solid var(--gold);
+    border-radius: 6px;
+    background: #fff8e6;
+    color: var(--navy);
+}
+
+.registration-chooser {
+    margin: 1.25rem 0;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--teal-light);
+}
+
+.registration-chooser h3:first-child {
+    margin-top: 0;
+}
+
+.role-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.65rem;
+}
+
+.role-choice-grid label,
+.macau-local-choice {
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--white);
+    cursor: pointer;
+}
+
+.macau-local-choice {
+    margin-top: 0.75rem;
+}
+
+.rate-option-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0 !important;
+    list-style: none;
+}
+
+.rate-option-list .price-option {
+    margin: 0 !important;
+    padding: 0.75rem !important;
+    border: 1px solid var(--border);
+    background: var(--white);
+}
+
 #aala-pricing .price-option {
     border-radius: 4px;
     padding: 0.2rem 0.35rem;
